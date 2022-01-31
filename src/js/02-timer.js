@@ -4,6 +4,10 @@ import 'flatpickr/dist/flatpickr.min.css';
 const refs = {
   input: document.getElementById('datetime-picker'),
   btn: document.querySelector('button[data-start]'),
+  days: document.querySelector('[data-days]'),
+  hours: document.querySelector('[data-hours]'),
+  minutes: document.querySelector('[data-minutes]'),
+  seconds: document.querySelector('[data-seconds]'),
 };
 
 const options = {
@@ -12,70 +16,46 @@ const options = {
   defaultDate: new Date(),
   minuteIncrement: 1,
   onClose(selectedDates) {
+    if (selectedDates[0] < Date.now()) {
+      refs.btn.disabled = true;
+      window.alert('Please choose a date in the future');
+      return;
+    }
+    refs.btn.disabled = false;
     console.log(selectedDates[0]);
   },
 };
 
 const fp = flatpickr(refs.input, options);
 
-class Timer {
-  constructor({ onTick }) {
-    this.intervalId = null;
-    this.isActive = false;
-    this.onTick = onTick;
+function convertMs(ms) {
+  // Number of milliseconds per unit of time
+  const second = 1000;
+  const minute = second * 60;
+  const hour = minute * 60;
+  const day = hour * 24;
 
-    this.init();
-  }
+  // Remaining days
+  const days = Math.floor(ms / day);
+  // Remaining hours
+  const hours = Math.floor((ms % day) / hour);
+  // Remaining minutes
+  const minutes = Math.floor(((ms % day) % hour) / minute);
+  // Remaining seconds
+  const seconds = Math.floor((((ms % day) % hour) % minute) / second);
 
-  init() {
-    const time = this.getTimeComponents(0);
-    this.onTick(time);
-  }
-
-  start() {
-    if (this.isActive) {
-      return;
-    }
-
-    const startTime = flatpickr.formatDate(new Date(), 'Y-m-d h:i K');
-    console.log(startTime);
-    this.isActive = true;
-
-    this.intervalId = setInterval(() => {
-      const currentTime = Date.now();
-      const deltaTime = currentTime - startTime;
-      const time = this.getTimeComponents(deltaTime);
-
-      this.onTick(time);
-    }, 1000);
-  }
-
-  stop() {
-    clearInterval(this.intervalId);
-    this.isActive = false;
-    const time = this.getTimeComponents(0);
-    this.onTick(time);
-  }
-
-  getTimeComponents(time) {
-    const hours = this.pad(Math.floor((time % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)));
-    const mins = this.pad(Math.floor((time % (1000 * 60 * 60)) / (1000 * 60)));
-    const secs = this.pad(Math.floor((time % (1000 * 60)) / 1000));
-
-    return { hours, mins, secs };
-  }
-
-  pad(value) {
-    return String(value).padStart(2, '0');
-  }
+  return { days, hours, minutes, seconds };
 }
 
-// const timer = new Timer({
-//   onTick: updateClockface,
-// });
-
-// refs.btn.addEventListener('click', timer.start.bind(timer));
-
-// function updateClockface({ hours, mins, secs }) {
-//   refs.clockface.textContent = `${hours}:${mins}:${secs}`;
-// }
+refs.btn.addEventListener('click', () => {
+  const intervalId = setInterval(() => {
+    const currentDate = Date.now();
+    const timeLeft = choosenDate - currentDate;
+    daysEl.textContent = convertMs(timeLeft).days;
+    hoursEl.textContent = convertMs(timeLeft).hours;
+    minutesEl.textContent = convertMs(timeLeft).minutes;
+    secondsEl.textContent = convertMs(timeLeft).seconds;
+    btnStart.disabled = true;
+    fpickr.input.setAttribute('disabled', 'disabled');
+  }, 1000);
+});
