@@ -1,5 +1,6 @@
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import Notiflix from 'notiflix';
 
 const refs = {
   input: document.getElementById('datetime-picker'),
@@ -9,7 +10,6 @@ const refs = {
   minutes: document.querySelector('[data-minutes]'),
   seconds: document.querySelector('[data-seconds]'),
 };
-
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -18,15 +18,36 @@ const options = {
   onClose(selectedDates) {
     if (selectedDates[0] < Date.now()) {
       refs.btn.disabled = true;
-      window.alert('Please choose a date in the future');
+      Notiflix.Notify.failure('Please choose a date in the future');
       return;
     }
     refs.btn.disabled = false;
     console.log(selectedDates[0]);
   },
 };
-
 const fp = flatpickr(refs.input, options);
+
+console.log(fp.selectedDates[0]);
+
+class Timer {
+  constructor({ onTick }) {
+    this.intervalId = null;
+    this.isActive = false;
+    this.onTick = onTick;
+  }
+
+  start() {
+    if (this.isActive) {
+      return;
+    }
+
+    this.isActive = true;
+
+    this.intervalId = setInterval(() => {
+      this.onTick();
+    }, 1000);
+  }
+}
 
 function convertMs(ms) {
   // Number of milliseconds per unit of time
@@ -47,15 +68,21 @@ function convertMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
-refs.btn.addEventListener('click', () => {
-  const intervalId = setInterval(() => {
-    const currentDate = Date.now();
-    const timeLeft = choosenDate - currentDate;
-    daysEl.textContent = convertMs(timeLeft).days;
-    hoursEl.textContent = convertMs(timeLeft).hours;
-    minutesEl.textContent = convertMs(timeLeft).minutes;
-    secondsEl.textContent = convertMs(timeLeft).seconds;
-    btnStart.disabled = true;
-    fpickr.input.setAttribute('disabled', 'disabled');
-  }, 1000);
+const timer = new Timer({
+  onTick: changeNumberOfTimer,
 });
+
+function changeNumberOfTimer(e) {
+  const currentDate = Date.now();
+  const choosenDate = new Date(fp.selectedDates);
+  const timeLeft = choosenDate - currentDate;
+  refs.days.textContent = convertMs(timeLeft).days;
+  refs.hours.textContent = convertMs(timeLeft).hours;
+  refs.minutes.textContent = convertMs(timeLeft).minutes;
+  refs.seconds.textContent = convertMs(timeLeft).seconds;
+}
+function addLeadingZero() {
+  return String(value).padStart(2, '0');
+}
+
+refs.btn.addEventListener('click', timer.start.bind(timer));
