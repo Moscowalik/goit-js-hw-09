@@ -10,6 +10,9 @@ const refs = {
   minutes: document.querySelector('[data-minutes]'),
   seconds: document.querySelector('[data-seconds]'),
 };
+
+refs.btn.disabled = true;
+
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -17,7 +20,7 @@ const options = {
   minuteIncrement: 1,
   onClose(selectedDates) {
     if (selectedDates[0] < Date.now()) {
-      refs.btn.disabled = true;
+      
       Notiflix.Notify.failure('Please choose a date in the future');
       return;
     }
@@ -44,12 +47,26 @@ class Timer {
     this.isActive = true;
 
     this.intervalId = setInterval(() => {
-      this.onTick();
+        const currentDate = Date.now();
+  const choosenDate = new Date(fp.selectedDates);
+  const timeLeft = choosenDate - currentDate;
+        if (timeLeft <= 0) {
+        clearInterval(this.intervalId);
+        this.isActive = false;
+        return;
+      }
+  const time = convertMs(timeLeft)
+      this.onTick(time);
     }, 1000);
   }
+
 }
 
-function convertMs(ms) {
+const timer = new Timer({
+  onTick: changeNumberOfTimer,
+});
+
+ function convertMs(ms) {
   // Number of milliseconds per unit of time
   const second = 1000;
   const minute = second * 60;
@@ -68,21 +85,17 @@ function convertMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
-const timer = new Timer({
-  onTick: changeNumberOfTimer,
-});
-
-function changeNumberOfTimer(e) {
-  const currentDate = Date.now();
-  const choosenDate = new Date(fp.selectedDates);
-  const timeLeft = choosenDate - currentDate;
-  refs.days.textContent = convertMs(timeLeft).days;
-  refs.hours.textContent = convertMs(timeLeft).hours;
-  refs.minutes.textContent = convertMs(timeLeft).minutes;
-  refs.seconds.textContent = convertMs(timeLeft).seconds;
-}
-function addLeadingZero() {
+function addLeadingZero(value) {
   return String(value).padStart(2, '0');
 }
+
+function changeNumberOfTimer({ days, hours, minutes, seconds }) {
+  refs.days.textContent = addLeadingZero(days);
+  refs.hours.textContent = addLeadingZero(hours);
+  refs.minutes.textContent = addLeadingZero(minutes);
+  refs.seconds.textContent = addLeadingZero(seconds);
+}
+
+
 
 refs.btn.addEventListener('click', timer.start.bind(timer));
