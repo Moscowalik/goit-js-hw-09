@@ -2,6 +2,7 @@ const refs = {
   startBtn: document.querySelector('button[data-start]'),
   stopBtn: document.querySelector('button[data-stop]'),
 };
+refs.startBtn.disabled = false;
 
 class Timer {
   constructor({ onTick }) {
@@ -11,25 +12,21 @@ class Timer {
   }
 
   start() {
-    if (this.isActive) {
-      return;
-    }
-
     this.isActive = true;
+    refs.startBtn.disabled = true;
 
     this.intervalId = setInterval(() => {
-      this.onTick();
+      updateBodyColor();
     }, 1000);
   }
 
   stop() {
     clearInterval(this.intervalId);
     this.isActive = false;
+    refs.startBtn.disabled = false;
   }
 }
-const timer = new Timer({
-  onTick: updateBodyColor,
-});
+const timer = new Timer({});
 
 refs.startBtn.addEventListener('click', timer.start.bind(timer));
 refs.stopBtn.addEventListener('click', timer.stop.bind(timer));
